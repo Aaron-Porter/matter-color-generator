@@ -1,95 +1,164 @@
-import Image from 'next/image'
-import styles from './page.module.css'
+import styles from "./page.module.css";
 
-export default function Home() {
+import Jimp from "jimp";
+import {
+  argbFromHex,
+  themeFromSourceColor,
+  applyTheme,
+  QuantizerCelebi,
+  Score,
+  SchemeExpressive,
+  Hct,
+  MaterialDynamicColors,
+  hexFromArgb,
+  SchemeTonalSpot,
+  SchemeVibrant,
+  TonalPalette,
+  CorePalette,
+  Blend,
+  TemperatureCache,
+  Contrast,
+  SchemeFidelity,
+} from "@material/material-color-utilities";
+import Generate from "./GenerateUI";
+import Image from "next/image";
+
+const generateColorsFromImage = async (imageUrl) => {
+  let argbArray = [];
+
+  return Jimp.read(`./public${imageUrl}`)
+    .then((image) => {
+      image.scan(
+        0,
+        0,
+        image.bitmap.width,
+        image.bitmap.height,
+        function (x, y, idx) {
+          const rgba = Jimp.intToRGBA(image.getPixelColor(x, y));
+          const argbFromRgba = (rgba) => {
+            return (rgba.a << 24) | (rgba.r << 16) | (rgba.g << 8) | rgba.b;
+          };
+          argbArray.push(argbFromRgba(rgba));
+        }
+      );
+    })
+    .then(() => {
+      // Pull colors from image
+      const quantizerResult = QuantizerCelebi.quantize(argbArray, 128);
+
+      // Filter out greyscale colors
+      const filteredMap = new Map(
+        Array.from(quantizerResult.entries()).filter(([key, value]) => {
+          // Specify your filtering condition
+          const color = Hct.fromInt(key);
+
+          return color.internalChroma > 20; // Example: Keep entries with keys greater than 2
+        })
+      );
+
+      // Score colors for use in UI
+      const colors = Score.score(filteredMap, { filter: true });
+
+      // Generate a color scheme
+      const scheme = new SchemeFidelity(Hct.fromInt(colors[0]), false, 0);
+
+      // Get the primary color
+      const primary = MaterialDynamicColors.primary.getArgb(scheme);
+      const secondary = MaterialDynamicColors.secondary.getArgb(scheme);
+      const tertiary = MaterialDynamicColors.tertiary.getArgb(scheme);
+
+      return {
+        primary: hexFromArgb(primary),
+        secondary: hexFromArgb(secondary),
+        tertiary: hexFromArgb(tertiary),
+      };
+    });
+};
+
+function Images() {
+  const images = [
+    "/images/cover_1.png",
+    "/images/cover_2.png",
+    "/images/cover_3.png",
+    "/images/cover_4.png",
+    "/images/cover_5.png",
+    "/images/cover_6.png",
+    "/images/cover_7.png",
+    "/images/cover_8.png",
+    "/images/cover_9.png",
+    "/images/cover_10.png",
+    "/images/cover_11.png",
+    "/images/cover_12.png",
+    "/images/cover_13.png",
+  ];
+
+  return (
+    <div>
+      {images.map(async (image, index) => {
+        const colors = await generateColorsFromImage(image);
+
+        return (
+          <div key={index} style={{ display: "flex", padding: "24px" }}>
+            <Image src={image} width={200} height={200} />
+            <div
+              style={{
+                backgroundColor: colors.primary,
+                width: "200px",
+                height: "200px",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+              }}
+            >
+              <p style={{ color: "#fff" }}>Primary {colors.primary}</p>
+            </div>
+            <div
+              style={{
+                backgroundColor: colors.secondary,
+                width: "200px",
+                height: "200px",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+              }}
+            >
+              <p style={{ color: "#fff" }}>Secondary {colors.secondary}</p>
+            </div>
+            <div
+              style={{
+                backgroundColor: colors.tertiary,
+                width: "200px",
+                height: "200px",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+              }}
+            >
+              <p style={{ color: "#fff" }}>Tertiary {colors.tertiary}</p>
+            </div>
+            <div
+              style={{
+                background: `linear-gradient(${colors.primary}, ${colors.secondary})`,
+                width: "200px",
+                height: "200px",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+              }}
+            >
+              <p style={{ color: "#fff" }}>Gradient</p>
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+export default async function Home() {
   return (
     <main className={styles.main}>
-      <div className={styles.description}>
-        <p>
-          Get started by editing&nbsp;
-          <code className={styles.code}>src/app/page.tsx</code>
-        </p>
-        <div>
-          <a
-            href="https://vercel.com?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            By{' '}
-            <Image
-              src="/vercel.svg"
-              alt="Vercel Logo"
-              className={styles.vercelLogo}
-              width={100}
-              height={24}
-              priority
-            />
-          </a>
-        </div>
-      </div>
-
-      <div className={styles.center}>
-        <Image
-          className={styles.logo}
-          src="/next.svg"
-          alt="Next.js Logo"
-          width={180}
-          height={37}
-          priority
-        />
-      </div>
-
-      <div className={styles.grid}>
-        <a
-          href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          className={styles.card}
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2>
-            Docs <span>-&gt;</span>
-          </h2>
-          <p>Find in-depth information about Next.js features and API.</p>
-        </a>
-
-        <a
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          className={styles.card}
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2>
-            Learn <span>-&gt;</span>
-          </h2>
-          <p>Learn about Next.js in an interactive course with&nbsp;quizzes!</p>
-        </a>
-
-        <a
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          className={styles.card}
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2>
-            Templates <span>-&gt;</span>
-          </h2>
-          <p>Explore the Next.js 13 playground.</p>
-        </a>
-
-        <a
-          href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          className={styles.card}
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2>
-            Deploy <span>-&gt;</span>
-          </h2>
-          <p>
-            Instantly deploy your Next.js site to a shareable URL with Vercel.
-          </p>
-        </a>
-      </div>
+      <Images />
     </main>
-  )
+  );
 }
