@@ -20,11 +20,11 @@ import {
   Contrast,
   SchemeFidelity,
 } from "@material/material-color-utilities";
-import Generate from "./GenerateUI";
 import Image from "next/image";
+import { RGBA } from "@jimp/core";
 
-const generateColorsFromImage = async (imageUrl) => {
-  let argbArray = [];
+const generateColorsFromImage = async (imageUrl: string) => {
+  let argbArray: number[] = [];
 
   return Jimp.read(`./public${imageUrl}`)
     .then((image) => {
@@ -35,7 +35,7 @@ const generateColorsFromImage = async (imageUrl) => {
         image.bitmap.height,
         function (x, y, idx) {
           const rgba = Jimp.intToRGBA(image.getPixelColor(x, y));
-          const argbFromRgba = (rgba) => {
+          const argbFromRgba = (rgba: RGBA) => {
             return (rgba.a << 24) | (rgba.r << 16) | (rgba.g << 8) | rgba.b;
           };
           argbArray.push(argbFromRgba(rgba));
@@ -99,7 +99,7 @@ function Images() {
 
         return (
           <div key={index} style={{ display: "flex", padding: "24px" }}>
-            <Image src={image} width={200} height={200} />
+            <Image src={image} width={200} height={200} alt="" />
             <div
               style={{
                 backgroundColor: colors.primary,
