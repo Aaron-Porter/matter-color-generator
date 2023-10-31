@@ -59,13 +59,18 @@ const generateColorsFromImage = async (imageUrl: string) => {
       // Score colors for use in UI
       const colors = Score.score(filteredMap, { filter: true });
 
-      // Generate a color scheme
-      const scheme = new SchemeFidelity(Hct.fromInt(colors[0]), false, 0);
+      // Set primary
+      const primary = colors[0];
 
-      // Get the primary color
-      const primary = MaterialDynamicColors.primary.getArgb(scheme);
-      const secondary = MaterialDynamicColors.secondary.getArgb(scheme);
-      const tertiary = MaterialDynamicColors.tertiary.getArgb(scheme);
+      const manipulateTone = (int: number, multiplier: number) => {
+        const HCT = Hct.fromInt(primary);
+        HCT.tone = HCT.tone * multiplier;
+        return HCT.toInt();
+      };
+
+      // Manipulate primary to derive other colors
+      const secondary = manipulateTone(primary, 0.6);
+      const tertiary = manipulateTone(primary, 0.3);
 
       return {
         primary: hexFromArgb(primary),
@@ -138,7 +143,7 @@ function Images() {
             </div>
             <div
               style={{
-                background: `linear-gradient(${colors.primary}, ${colors.secondary})`,
+                background: `linear-gradient(${colors.secondary}, ${colors.tertiary})`,
                 width: "200px",
                 height: "200px",
                 display: "flex",
